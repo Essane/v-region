@@ -1,4 +1,4 @@
-import { h, ref, defineComponent } from 'vue'
+import { h, ref, defineComponent, watchEffect } from 'vue'
 import { validModel } from './utils/helper'
 import { modelToRegion, regionToText } from './utils/parse'
 
@@ -9,12 +9,17 @@ export default defineComponent({
     separator: { type: String, default: '' }
   },
   setup (props) {
-    if (!validModel(props.modelValue)) return
-
     const text = ref('')
+    watchEffect(async () => {
+      if (!validModel(props.modelValue)) return
 
-    modelToRegion(props.modelValue).then(resp => {
-      text.value = regionToText(resp).join(props.separator)
+      try {
+        const resp = await modelToRegion(props.modelValue)
+        text.value = regionToText(resp).join(props.separator)
+      } catch (error) {
+        console.error('Error converting model to text:', error)
+        text.value = 'convert error'
+      }
     })
 
     return () => h('span', text.value)
